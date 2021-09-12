@@ -1,47 +1,57 @@
 package springboot.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import springboot.entities.Product;
-import springboot.services.ProductService;
+import springboot.repositories.ProductRepository;
+
+import java.util.List;
+import java.util.Optional;
 
 @Controller
-@RequestMapping("/product")
+@RequestMapping("/products")
 public class ProductController {
 
-    @Autowired
-    private ProductService productService;
+    private final ProductRepository repository;
 
-    @GetMapping
+    public ProductController(ProductRepository repository) {
+        this.repository = repository;
+    }
+
+    @RequestMapping( method = RequestMethod.GET)
     @ResponseBody
-    public String indexPage(Model model) {
-        model.addAttribute("products", productService.getAllProduct());
-        return "product_views/index";
+    public List<Product> findAll(){
+        return repository.findAll();
     }
 
-    @GetMapping("/{id}")
-    public String editProduct(@PathVariable(value = "id") Long id,
-                              Model model) {
-        model.addAttribute("product", productService.getById(id));
-        return "product_views/product_form";
+    @RequestMapping( value = "/{id}", method = RequestMethod.GET)
+    @ResponseBody
+    public Optional<Product> findByID(@PathVariable int id) {
+        return repository.findByID(id);
     }
 
-    @PostMapping("/product_update")
-    public String updateProduct(Product product) {
-        if(product.getId() == null) {
-            productService.add(product);
-        } else {
-            productService.update(product);
-        }
-        return "redirect:/product";
+    @RequestMapping(value = "/{id}",method = RequestMethod.POST)
+    public List<Product> save(@RequestBody Product product) {
+        repository.add(product);
+        return repository.findAll();
     }
 
-
-    @GetMapping("/delete/{id}")
-    public String removeProduct(@PathVariable(value = "id") Long id) {
-        productService.remove(id);
-        return "redirect:/product";
+    @RequestMapping(value = "/delete/{id}", method = RequestMethod.GET)
+    @ResponseBody
+    public List<Product> delete(@PathVariable int id) {
+        repository.remove(id);
+        return repository.findAll();
     }
+
 }
+
+
+
+
+
+
+
+
+
+
