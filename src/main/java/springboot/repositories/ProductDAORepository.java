@@ -1,62 +1,61 @@
 package springboot.repositories;
 
-import org.hibernate.Transaction;
 import springboot.entities.Product;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
-
+import javax.persistence.EntityManager;
 import java.util.List;
 
 @Repository
-public class ProductDAORepository {
+public class ProductDAORepository implements ProductRepository{
 
-    private static SessionFactory sessionFactory;
-
-    public void addProductDao(Product product) {
-        Session session = sessionFactory.openSession();
-        Transaction transaction = null;
-
-        transaction = session.beginTransaction();
-        //Product product = new Product();
-        session.save(product);
-        transaction.commit();
-        session.close();
+    private final EntityManager em;
+    public ProductDAORepository(EntityManager em) {
+        this.em = em;
     }
 
-    public List<Product> listProductDao() {
-        Session session = this.sessionFactory.openSession();
-        Transaction transaction = null;
-
-        transaction = session.beginTransaction();
-        List products = session.createQuery("FROM Product ").list();
-
-        transaction.commit();
-        session.close();
-        return products;
+    @Override
+    public List<Product> findAll() {
+        em.getTransaction().begin();
+        List<Product> list = em.createNamedQuery("Product.findAll", Product.class).getResultList();
+        em.getTransaction().commit();
+        return list;
     }
 
-    public List findDAOByID(int ID) {
-        Session session = this.sessionFactory.openSession();
-        Transaction transaction = null;
-
-        transaction = session.beginTransaction();
-        List products = session.createQuery("FROM Product where id =:ID").list();
-
-        transaction.commit();
-        session.close();
-        return products;
+    @Override
+    public List<Product> findAllSortedByName() {
+        em.getTransaction().begin();
+        List<Product> list = em.createNamedQuery("Product.findAllSortedByName", Product.class).getResultList();
+        em.getTransaction().commit();
+        return list;
     }
 
-    public void removeDeveloper(int id) {
-        Session session = this.sessionFactory.openSession();
-        Transaction transaction = null;
-
-        transaction = session.beginTransaction();
-        Product product = (Product) session.get(Product.class, id);
-        session.delete(product);
-        transaction.commit();
-        session.close();
+    @Override
+    public void saveOrUpdate(Product product) {
+        em.getTransaction().begin();
+        if (product.getId() == null) {
+            em.persist(product);
+        } else {
+            em.merge(product);
+        }
+        em.getTransaction().commit();
     }
 
+    @Override
+    public Product findById(Long id) {
+        em.getTransaction().begin();
+        Product product =  em.createNamedQuery("Product.findById", Product.class)
+                .setParameter("id", id)
+                .getSingleResult();
+        em.getTransaction().commit();
+        return product;
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        em.getTransaction().begin();
+        em.createNamedQuery("Product.deleteById")
+                .setParameter("id", id)
+                .executeUpdate();
+        em.getTransaction().commit();
+    }
 }
